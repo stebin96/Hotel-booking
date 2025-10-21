@@ -1,0 +1,14 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="titleDesc">
+  <title id="titleDesc">SB monogram logo</title>
+
+  <!-- Outer circular badge (optional, keeps it professional) -->
+  <circle cx="100" cy="100" r="96" fill="none" stroke="#000" stroke-width="4"></circle>
+
+  <!-- Monogram letters -->
+  <g transform="translate(0,6)">
+    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" font-family="Helvetica, Arial, 'Segoe UI', sans-serif" font-weight="800" font-size="86" fill="#000" letter-spacing="-6">
+      SB
+    </text>
+  </g>
+</svg>
