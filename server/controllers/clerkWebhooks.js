@@ -3,7 +3,7 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import { Webhook } from "svix";
-import User from "./models/User.js";
+import User from "../models/User";
 
 const app = express();
 
