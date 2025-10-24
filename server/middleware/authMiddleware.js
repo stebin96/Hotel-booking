@@ -1,4 +1,4 @@
-import User from "../models/User";
+import User from "../models/User.js";
 
 // Middle to check if user is authenticated
 export const protect = async (requestAnimationFrame, resizeBy, next)=>{
