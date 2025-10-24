@@ -1,9 +1,23 @@
-import User from "../models/User.js";
+import mongoose from "mongoose";
+import express from "express";
+import "dotenv/config";
+import cors from "cors";
 import { Webhook } from "svix";
+import User from "./models/User.js";
 
-const clerkWebhooks = async (req, res) => {
+const app = express();
+
+// ✅ Middleware
+app.use(cors());
+
+// ------------------------
+// Clerk webhook route
+// ------------------------
+app.post("/api/clerk", async (req, res) => {
   try {
-    // Initialize the Svix webhook verifier
+    // For Vercel, req.body is already a stream
+    const rawBody = await getRawBody(req); // get raw buffer
+
     const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
     const headers = {
@@ -12,55 +26,52 @@ const clerkWebhooks = async (req, res) => {
       "svix-signature": req.headers["svix-signature"],
     };
 
-    // Verify the webhook using the raw body
-    await whook.verify(req.body, headers);
+    // Verify webhook
+    await whook.verify(rawBody, headers);
 
-    // Parse the raw body
-    const { data, type } = JSON.parse(req.body.toString());
+    const { type, data } = JSON.parse(rawBody.toString());
 
-    // Build user data safely with optional chaining
     const userData = {
       _id: data.id,
-      email: data.email_addresses?.[0]?.email_address || "", // safe fallback
-      username: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
+      email: data.email_addresses?.[0]?.email_address || "",
+      username: `${data.first_name || ""} ${data.last_name || ""}`,
       image: data.image_url || "",
     };
 
-    // Handle the different webhook event types
     switch (type) {
       case "user.created":
-        // Only create if user doesn't exist
-        if (!(await User.findById(data.id))) {
-          await User.create(userData);
-          console.log("✅ User Created:", userData);
-        } else {
-          console.log("⚠️ User already exists:", userData._id);
-        }
+        await User.create(userData);
+        console.log("✅ User Created:", userData);
         break;
-
       case "user.updated":
-        await User.findByIdAndUpdate(data.id, userData, { new: true });
+        await User.findByIdAndUpdate(data.id, userData);
         console.log("♻️ User Updated:", userData);
         break;
-
       case "user.deleted":
-        const deletedUser = await User.findByIdAndDelete(data.id);
-        if (deletedUser) {
-          console.log("🗑 User Deleted:", data.id);
-        } else {
-          console.log("⚠️ User not found for deletion:", data.id);
-        }
+        await User.findByIdAndDelete(data.id);
+        console.log("🗑 User Deleted:", data.id);
         break;
-
       default:
         console.log("⚠️ Unhandled event type:", type);
     }
 
     return res.status(200).json({ success: true, message: "Webhook processed" });
-  } catch (error) {
-    console.error("❌ Webhook Error:", error.message);
-    return res.status(400).json({ success: false, message: error.message });
+  } catch (err) {
+    console.error("❌ Webhook Error:", err.message);
+    return res.status(400).json({ success: false, message: err.message });
   }
-};
+});
 
-export default clerkWebhooks;
+// ------------------------
+// Helper to get raw body
+// ------------------------
+function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = [];
+    req.on("data", (chunk) => data.push(chunk));
+    req.on("end", () => resolve(Buffer.concat(data)));
+    req.on("error", (err) => reject(err));
+  });
+}
+
+export default app;
