@@ -10,25 +10,29 @@ import hotelRouter from "./routes/hotelRoutes.js";
 
 const app = express();
 
-// ✅ Connect Database
-connectDB();
-
 // ✅ Middleware
 app.use(cors());
+app.use(express.json());
+app.use(clerkMiddleware());
 
 // ✅ Raw body for Clerk webhooks must be BEFORE express.json()
 app.post("/api/clerk", bodyParser.raw({ type: "application/json" }), clerkWebhooks);
 
-// ✅ Now parse JSON for all other routes
-app.use(express.json());
-app.use(clerkMiddleware());
+// ✅ Routes
+app.use('/api/user', userRouter)
+app.use('/api/hotels', hotelRouter)
 
 // ✅ Test Route
 app.get("/", (req, res) => {
   res.send("✅ Backend is running successfully on Vercel");
 });
-app.use('/api/user', userRouter)
-app.use('/api/hotels', hotelRouter)
 
-// ✅ IMPORTANT: Export app instead of app.listen()
+// ✅ Connect DB before anything else
+const startApp = async () => {
+  await connectDB();
+  console.log("🚀 App is ready");
+};
+
+startApp();
+
 export default app;
