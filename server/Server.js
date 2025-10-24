@@ -5,6 +5,8 @@ import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
 import { clerkMiddleware } from '@clerk/express';
 import clerkWebhooks from "./controllers/clerkWebhooks.js";
+import userRouter from "./routes/userRoutes.js";
+import hotelRouter from "./routes/hotelRoutes.js";
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use(clerkMiddleware());
 app.get("/", (req, res) => {
   res.send("✅ Backend is running successfully on Vercel");
 });
+app.use('/api/user', userRouter)
+app.use('/api/hotels', hotelRouter)
 
 // ✅ IMPORTANT: Export app instead of app.listen()
 export default app;
