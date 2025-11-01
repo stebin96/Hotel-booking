@@ -23,3 +23,13 @@ export const registerHotel = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
+// ✅ NEW: Get all hotels (for testing / admin panel / frontend listing)
+export const getAllHotels = async (req, res) => {
+  try {
+    const hotels = await Hotel.find().populate("owner", "email"); // optional populate
+    res.json({ success: true, hotels });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
