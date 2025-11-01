@@ -3,36 +3,47 @@ import "dotenv/config";
 import cors from "cors";
 import bodyParser from "body-parser";
 import connectDB from "./config/db.js";
-import { clerkMiddleware } from '@clerk/express';
+import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from "./controllers/clerkWebhooks.js";
 import userRouter from "./routes/userRoutes.js";
 import hotelRouter from "./routes/hotelRoutes.js";
+import roomRouter from "./routes/roomRoutes.js";
+import bookingRouter from "./routes/bookingRoutes.js";
+import connectCloudinary from "./config/cloudinary.js";
 
 const app = express();
 
-// ✅ Middleware
-app.use(cors());
-app.use(express.json());
-app.use(clerkMiddleware());
+// ✅ Connect services
+connectCloudinary();
+connectDB();
 
-// ✅ Raw body for Clerk webhooks must be BEFORE express.json()
-app.post("/api/clerk", bodyParser.raw({ type: "application/json" }), clerkWebhooks);
+// ✅ Webhook MUST come first (raw body, no JSON parser before this!)
+app.post(
+  "/api/clerk",
+  bodyParser.raw({ type: "application/json" }),
+  clerkWebhooks
+);
+
+// ✅ Global middlewares
+app.use(cors());
+app.use(express.json());        // JSON parsing applied after webhook
+app.use(clerkMiddleware());     // Clerk middleware applied after webhook
 
 // ✅ Routes
-app.use('/api/user', userRouter)
-app.use('/api/hotels', hotelRouter)
+app.use("/api/user", userRouter);
+app.use("/api/hotels", hotelRouter);
+app.use("/api/rooms", roomRouter);
+app.use("/api/bookings", bookingRouter);
 
-// ✅ Test Route
+// ✅ Health check
 app.get("/", (req, res) => {
-  res.send("✅ Backend is running successfully on Vercel");
+  res.send("✅ Backend is running successfully");
 });
 
-// ✅ Connect DB before anything else
-const startApp = async () => {
-  await connectDB();
-  console.log("🚀 App is ready");
-};
-
-startApp();
+// ✅ Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
 
 export default app;
